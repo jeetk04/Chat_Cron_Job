@@ -19,7 +19,18 @@ async function deleteExpiredUsers() {
     // Find users whose account duration has expired
     const expiredUsers = await users.find({
       accountDuration: { $exists: true }, // Ensure accountDuration exists
-      $expr: { $lt: ["$accountDuration", currentTime] } // Compare accountDuration with current time
+      createdAt: { $exists: true }, // Ensure createdAt exists
+      $expr: {
+        $lt: [
+          {
+            $divide: [
+              { $subtract: [currentTime, "$createdAt"] },
+              1000 * 60 // Convert milliseconds to minutes
+            ]
+          },
+          "$accountDuration"
+        ]
+      }
     }).toArray();
 
     if (expiredUsers.length > 0) {
