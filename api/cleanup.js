@@ -4,7 +4,7 @@ const { MongoClient } = require('mongodb');
 const uri = process.env.MONGODB_URI;
 
 const dbName = 'test';
-const usersCollection = 'user1';
+const collectionName = 'users';
 
 async function deleteExpiredUsers() {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -13,41 +13,34 @@ async function deleteExpiredUsers() {
     console.log("Connecting to database...");
     await client.connect();
     const db = client.db(dbName);
-    const users = db.collection(usersCollection);
+    const collection = db.collection(collectionName);
     const currentTime = new Date();
 
-    // Find users whose account duration has expired
-    const expiredUsers = await users.find({
-      accountDuration: { $exists: true }, // Ensure accountDuration exists
-      createdAt: { $exists: true }, // Ensure createdAt exists
-      $expr: {
-        $lt: [
-          {
-            $divide: [
-              { $subtract: [currentTime, "$createdAt"] },
-              1000 * 60 // Convert milliseconds to minutes
-            ]
-          },
-          "$accountDuration"
-        ]
-      }
-    }).toArray();
+    // Log current time for debugging
+    console.log("Current Time:", currentTime);
 
-    if (expiredUsers.length > 0) {
-      console.log(`Found ${expiredUsers.length} expired users. Deleting...`);
-      const result = await users.deleteMany({
-        _id: { $in: expiredUsers.map(user => user._id) }
-      });
-      console.log(`Deleted ${result.deletedCount} expired users.`);
-    } else {
-      console.log("No expired users found.");
-    }
-  } catch (error) {
-    console.error("Error deleting expired users:", error);
+    // Delete users older than 2 minutes
+    const result = await collection.deleteMany({
+      createdAt: { $lt: new Date(currentTime - 2 * 60 * 1000) },
+    });
+
+    console.log(`Deleted ${result.deletedCount} expired users.`);
+  } catch (err) {
+    console.error('Error deleting expired users:', err);
+    throw err; // Rethrow the error to trigger a 500 response
   } finally {
     await client.close();
+    console.log("Database connection closed.");
   }
 }
 
-// Run the function
-deleteExpiredUsers();
+module.exports = async (req, res) => {
+  try {
+    console.log("Cleanup function triggered");
+    await deleteExpiredUsers();
+    res.status(200).send('Cleanup completed.');
+  } catch (err) {
+    console.error('Error during API execution:', err);
+    res.status(500).send('Error during cleanup.');
+  }
+};
