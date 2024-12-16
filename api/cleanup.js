@@ -22,7 +22,7 @@ async function deleteExpiredUsers() {
 
     // Find expired users
     const expiredUsers = await users.find({
-      createdAt: { $lt: new Date(currentTime - 2 * 60 * 1000) }
+      createdAt: { $lt: new Date(currentTime - 5 * 60 * 1000) }
     }).toArray();
 
     console.log(`Found ${expiredUsers.length} expired users.`);
