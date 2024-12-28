@@ -1,18 +1,24 @@
 const https = require('https');
 
-// The URL of your API endpoint
 const apiUrl = 'https://chat-app-42rc.onrender.com/api/get_users/';
 
 async function hitApi() {
   try {
     console.log(`Sending request to ${apiUrl}...`);
     
-    // Making the GET request using https module
     https.get(apiUrl, (response) => {
-      console.log('Response Status:', response.statusCode); // Log only the status code
+      console.log('Response Status:', response.statusCode);
 
-      // We are not processing the response body, just checking the status
+      let data = '';
+      
+      // Collect the response body
+      response.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      // Log the full response when it's finished
       response.on('end', () => {
+        console.log('Response Body:', data);
         console.log('Request completed');
       });
     }).on('error', (err) => {
@@ -23,8 +29,7 @@ async function hitApi() {
   }
 }
 
-// Export the function so Vercel can invoke it
 module.exports = async (req, res) => {
   await hitApi();
-  res.status(200).send('API hit successfully'); // Respond with a success message
+  res.status(200).send('API hit successfully');
 };
