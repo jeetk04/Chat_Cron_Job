@@ -23,4 +23,8 @@ async function hitApi() {
   }
 }
 
-hitApi();
+// Export the function so Vercel can invoke it
+module.exports = async (req, res) => {
+  await hitApi();
+  res.status(200).send('API hit successfully'); // Respond with a success message
+};
