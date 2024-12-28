@@ -18,7 +18,8 @@ async function deleteExpiredUsers() {
     const chats = db.collection(chatsCollection);
 
     const currentTime = new Date();
-    const twentyFourHoursAgo = new Date(currentTime.getTime() - 24 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(currentTime.getTime() - 5 * 60 * 1000);
+    // const twentyFourHoursAgo = new Date(currentTime.getTime() - 24 * 60 * 60 * 1000);
 
     // Step 1: Find expired users
     const expiredUsers = await users
