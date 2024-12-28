@@ -2,8 +2,8 @@ const https = require('https');
 
 const apiUrl = 'https://chat-app-42rc.onrender.com/api/get_users/';
 
-async function hitApi() {
-  try {
+async function fetchApiResponse() {
+  return new Promise((resolve, reject) => {
     console.log(`Sending request to ${apiUrl}...`);
     
     https.get(apiUrl, (response) => {
@@ -16,20 +16,24 @@ async function hitApi() {
         data += chunk;
       });
       
-      // Log the full response when it's finished
+      // Resolve the full response when it's finished
       response.on('end', () => {
         console.log('Response Body:', data);
-        console.log('Request completed');
+        resolve({ statusCode: response.statusCode, body: data });
       });
     }).on('error', (err) => {
       console.error('Error hitting API:', err.message);
+      reject(err);
     });
-  } catch (error) {
-    console.error('Error:', error.message);
-  }
+  });
 }
 
 module.exports = async (req, res) => {
-  await hitApi();
-  res.status(200).send('API hit successfully');
+  try {
+    const apiResponse = await fetchApiResponse();
+    res.status(apiResponse.statusCode).send(apiResponse.body);
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).send({ error: 'Failed to fetch API response' });
+  }
 };
